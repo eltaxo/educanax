@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Info, AlertCircle, AlertTriangle, BookOpen, Calculator, Globe, Music, Palette, Beaker } from 'lucide-react';
 
+// Force dynamic rendering to avoid database queries during build
+export const dynamic = 'force-dynamic';
+
 const iconMap: Record<string, any> = {
   BookOpen,
   Calculator,

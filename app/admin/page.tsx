@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Bell, Plus, ExternalLink } from 'lucide-react';
 import { CopyButton } from '@/components/admin/copy-button';
 
+// Force dynamic rendering to avoid database queries during build
+export const dynamic = 'force-dynamic';
+
 async function getDashboardData() {
   const [unidadesActivas, unidadesCompletadas, unidadesProximas, avisosActivos, configuracion] =
     await Promise.all([
