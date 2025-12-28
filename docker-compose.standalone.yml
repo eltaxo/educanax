@@ -1,6 +1,6 @@
-# docker-compose.yml
-# Configuración para servidores con Nginx principal
-# La aplicación se expone en puerto 3100 para que el Nginx principal haga proxy
+# docker-compose.standalone.yml
+# Usar este archivo si tu servidor NO tiene Nginx principal
+# Comando: docker-compose -f docker-compose.standalone.yml up -d
 
 version: '3.8'
 
@@ -15,7 +15,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-educanax_secure_password_2024}
       POSTGRES_DB: educanax
     volumes:
-      - educanax_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - educanax-network
     healthcheck:
@@ -31,8 +31,6 @@ services:
       dockerfile: Dockerfile
     container_name: educanax-app
     restart: unless-stopped
-    ports:
-      - "3100:3000"  # Puerto 3100 en el host -> 3000 en el contenedor
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,11 +44,36 @@ services:
       - educanax-network
     command: sh -c "npx prisma migrate deploy && node server.js"
 
+  # Nginx reverse proxy (con puertos 80 y 443)
+  nginx:
+    image: nginx:alpine
+    container_name: educanax-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - certbot_data:/var/www/certbot:ro
+    depends_on:
+      - app
+    networks:
+      - educanax-network
+
+  # Certbot para SSL
+  certbot:
+    image: certbot/certbot:latest
+    container_name: educanax-certbot
+    volumes:
+      - certbot_data:/var/www/certbot
+      - ./nginx/ssl:/etc/letsencrypt
+    command: certonly --webroot --webroot-path=/var/www/certbot --email tu-email@ejemplo.com --agree-tos --no-eff-email -d educanax.eltaxo.com
+
 networks:
   educanax-network:
-    name: educanax-network
     driver: bridge
 
 volumes:
-  educanax_postgres_data:
-    name: educanax_postgres_data
+  postgres_data:
+  certbot_data:
