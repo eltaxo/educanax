@@ -22,8 +22,9 @@ COPY . .
 # Generar Prisma Client
 RUN npx prisma generate
 
-# Construir Next.js
+# Construir Next.js con DATABASE_URL placeholder
 # Esto creará el build optimizado para producción
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/placeholder"
 RUN npm run build
 
 # Imagen de producción, copiar todos los archivos y ejecutar next
