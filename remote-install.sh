@@ -188,9 +188,9 @@ echo ""
 # BONUS: Crear usuario admin
 echo -e "${BLUE}[BONUS] Creando usuario administrador...${NC}"
 cd $PROJECT_DIR
-docker-compose exec -T app npm run prisma:seed || {
+docker-compose exec -T app node prisma/seed-simple.js || {
     echo -e "${YELLOW}⚠ No se pudo crear usuario automáticamente${NC}"
-    echo -e "${YELLOW}Ejecuta manualmente: docker-compose exec app npm run prisma:seed${NC}"
+    echo -e "${YELLOW}Ejecuta manualmente: docker-compose exec app node prisma/seed-simple.js${NC}"
 }
 echo ""
 
