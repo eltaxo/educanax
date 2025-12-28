@@ -1,0 +1,179 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Usuario administrador (Profesor)
+model UsuarioAdmin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  nombre    String
+  createdAt DateTime @default(now())
+}
+
+// Curso escolar (ej: 3º Primaria)
+model Curso {
+  id             String       @id @default(cuid())
+  nombre         String
+  slug           String       @unique
+  descripcion    String?
+  anioAcademico  String       // ej: "2024/2025"
+  activo         Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  asignaturas    Asignatura[]
+  avisos         Aviso[]
+}
+
+// Asignatura dentro de un curso
+model Asignatura {
+  id        String   @id @default(cuid())
+  cursoId   String
+  nombre    String
+  slug      String
+  color     String   // Color hex identificativo
+  icono     String   // Nombre del icono
+  orden     Int      @default(0)
+  visible   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  curso     Curso    @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  unidades  UnidadDidactica[]
+
+  @@unique([cursoId, slug])
+}
+
+enum EstadoUnidad {
+  PROXIMA
+  ACTIVA
+  COMPLETADA
+}
+
+// Unidad didáctica
+model UnidadDidactica {
+  id            String       @id @default(cuid())
+  asignaturaId  String
+  slug          String
+  numero        Int
+  titulo        String
+  descripcion   String?      @db.Text
+  objetivos     String?      @db.Text
+  fechaInicio   DateTime?
+  fechaFin      DateTime?
+  estado        EstadoUnidad @default(PROXIMA)
+  orden         Int          @default(0)
+  visible       Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  asignatura    Asignatura   @relation(fields: [asignaturaId], references: [id], onDelete: Cascade)
+  contenidos    Contenido[]
+  criterios     CriterioEvaluacion[]
+
+  @@unique([asignaturaId, slug])
+}
+
+enum TipoContenido {
+  TEORIA
+  ACTIVIDAD
+  REPASO
+}
+
+// Contenido dentro de una unidad
+model Contenido {
+  id          String        @id @default(cuid())
+  unidadId    String
+  titulo      String
+  descripcion String?       @db.Text
+  tipo        TipoContenido
+  orden       Int           @default(0)
+  visible     Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  unidad      UnidadDidactica @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+  recursos    Recurso[]
+}
+
+enum TipoRecurso {
+  VIDEO
+  PDF
+  LINK
+  IMAGEN
+  DOCUMENTO
+}
+
+// Recurso (material asociado a un contenido)
+model Recurso {
+  id           String      @id @default(cuid())
+  contenidoId  String
+  tipo         TipoRecurso
+  titulo       String
+  url          String
+  descripcion  String?
+  orden        Int         @default(0)
+  metadata     Json?       // thumbnail, duración, etc.
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  contenido    Contenido   @relation(fields: [contenidoId], references: [id], onDelete: Cascade)
+}
+
+// Criterio de evaluación (LOMLOE)
+model CriterioEvaluacion {
+  id            String   @id @default(cuid())
+  unidadId      String
+  codigo        String   // ej: CE.LCL.3.1
+  descripcion   String   @db.Text
+  peso          Float?   // peso porcentual
+  competencias  String[] // lista de competencias
+  indicadores   String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  unidad        UnidadDidactica @relation(fields: [unidadId], references: [id], onDelete: Cascade)
+}
+
+enum TipoAviso {
+  INFO
+  IMPORTANTE
+  URGENTE
+}
+
+// Avisos para las familias
+model Aviso {
+  id                String    @id @default(cuid())
+  cursoId           String?   // null = todos los cursos
+  titulo            String
+  mensaje           String    @db.Text
+  tipo              TipoAviso @default(INFO)
+  fechaPublicacion  DateTime  @default(now())
+  fechaExpiracion   DateTime?
+  visible           Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  curso             Curso?    @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+}
+
+// Configuración general del portal
+model Configuracion {
+  id                  String   @id @default(cuid())
+  nombreColegio       String
+  logo                String?
+  mensajeBienvenida   String?  @db.Text
+  contactoProfesor    String?
+  colorPrimario       String   @default("#3B82F6")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
