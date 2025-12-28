@@ -3,7 +3,8 @@ FROM node:18-alpine AS base
 
 # Instalar dependencias solo cuando sea necesario
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+# Agregar dependencias necesarias incluyendo OpenSSL para Prisma
+RUN apk add --no-cache libc6-compat openssl openssl-dev
 WORKDIR /app
 
 # Copiar archivos de dependencias
@@ -12,6 +13,8 @@ RUN npm ci
 
 # Rebuild the source code only when needed
 FROM base AS builder
+# Instalar OpenSSL para Prisma
+RUN apk add --no-cache openssl openssl-dev libc6-compat
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -25,6 +28,8 @@ RUN npm run build
 
 # Imagen de producción, copiar todos los archivos y ejecutar next
 FROM base AS runner
+# Instalar OpenSSL para runtime de Prisma
+RUN apk add --no-cache openssl openssl-dev libc6-compat
 WORKDIR /app
 
 ENV NODE_ENV=production
